@@ -1,14 +1,14 @@
 package com.trainologic.samples.petclinic.service
-
-import com.trainologic.samples.petclinic.model.Owner
+import com.trainologic.samples.petclinic._
+import model.Owner
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
-import com.trainologic.samples.petclinic.repository.OwnerRepository
+import repository.OwnerRepository
 import org.atnos.eff._
 import org.atnos.eff.task._
 import scalaz.\/-
 import scalaz.\/
-import com.trainologic.samples.petclinic.repository.OwnerRepositoryDoobieH2
+import repository.OwnerRepositoryDoobieH2
 import org.h2.jdbcx.JdbcConnectionPool
 import doobie.imports._
 import scalaz.~>
@@ -22,23 +22,9 @@ object OwnerServiceTest extends App {
 
     val xa = DataSourceTransactor[Task](cp)
 
-    val drop: Update0 =
-      sql"""
-              DROP TABLE IF EXISTS owners
-          """.update
-
-    val create: Update0 =
-      sql"""
-              CREATE TABLE owners(
-                 id bigint auto_increment, 
-                 firstName varchar(255), 
-                 lastName varchar(255), 
-                 address varchar(255), 
-                 city varchar(255), 
-                 telephone varchar(255)
-            )""".update
-
-    (drop.run *> create.run).transact(xa)
+   
+    import repository.InitH2._
+    (dropAll.run *> createTables.run).transact(xa)
   }
 
   def test1 = {

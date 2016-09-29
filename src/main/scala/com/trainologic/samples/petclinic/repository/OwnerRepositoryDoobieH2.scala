@@ -21,7 +21,7 @@ class OwnerRepositoryDoobieH2(val transactor: Transactor[Task]) extends OwnerRep
 
   def insertOwner(owner: Owner) = sql"""
       INSERT INTO 
-        owners (firstName, lastName, address, city, telephone) 
+        owners (first_name, last_name, address, city, telephone) 
         VALUES
         (${owner.firstName} , ${owner.lastName}, ${owner.address} , ${owner.city} ,
         ${owner.telephone} )
