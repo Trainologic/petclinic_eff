@@ -1,0 +1,11 @@
+/bin/
+target/**
+project/target/**
+*.sc
+.cache-*
+.project
+.classpath
+.worksheet/**
+.settings/**
+
+

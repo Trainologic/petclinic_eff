@@ -7,10 +7,11 @@ import scalaz.concurrent.Task
 import scalaz.\/
 import org.atnos.eff.Eff
 import org.atnos.eff.Validate
+import scalaz.Monad
 
-trait OwnerRepository {
+abstract class OwnerRepository[M[_] : Monad] {
    
-  type S = Fx.fx3[ DataAccessException \/ ?, Validate[String, ?], Task]
+  type S = Fx.fx3[M, DataAccessException \/ ?, Validate[String, ?]]
   
   def findByLastName(lastName: String):  Eff[S, Seq[Owner]]
   def findById(id: Int) : Eff[S, Owner]
