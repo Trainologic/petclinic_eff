@@ -9,16 +9,23 @@ import model.Owner
 import scalaz.concurrent.Task
 import java.sql.Connection
 import org.h2.jdbcx.JdbcConnectionPool
-
 class OwnerRepositoryDoobieH2(val transactor: Transactor[Task]) extends OwnerRepository[ConnectionIO] {
   override def findById(id: Int): Eff[S, Owner] = {
     ???
   }
 
-  override def findByLastName(lastName: String): Eff[S, Seq[Owner]] = {
-    ???
-  }
+  override def findByLastName(lastName: String): Eff[S, Seq[Owner]] = for {
+    owners <- send(selectOwnersByLastName(lastName)).into[S]
+  } yield owners
 
+  def selectOwnersByLastName(lastName: String) = sql"""
+      SELECT 
+        id, first_name, last_name, address, city, telephone
+      FROM owners 
+      WHERE last_name like $lastName
+    """.query[Owner].to[Seq]  
+  
+  
   def insertOwner(owner: Owner) = sql"""
       INSERT INTO 
         owners (first_name, last_name, address, city, telephone) 

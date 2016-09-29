@@ -18,20 +18,27 @@ import scalaz.NaturalTransformation
 
 object OwnerServiceTest extends App {
 
+  def natTransform(tran: Transactor[Task]) = new (ConnectionIO ~> Task) {
+      def apply[A](o: ConnectionIO[A]) = o.transact(tran)
+    }
+  
+  
+  
   def prepareDB(cp: JdbcConnectionPool): Task[Int] = {
 
     val xa = DataSourceTransactor[Task](cp)
 
    
     import repository.InitH2._
-    (dropAll.run *> createTables.run).transact(xa)
+    import repository.PopulateH2._
+    (dropAll.run *> createTables.run *> populateDB.run).transact(xa)
   }
 
   def test1 = {
     val owners: Map[Int, Owner] = Map(
-      1 -> Owner(Some(1), "john", "Davis", "TA", "TA", "0000", Set.empty),
-      2 -> Owner(Some(2), "john2", "Davis", "TA", "TA", "0000", Set.empty),
-      3 -> Owner(Some(3), "john3", "Bavis", "TA", "TA", "0000", Set.empty))
+      1 -> Owner(Some(1), "john", "Davis", "TA", "TA", "0000"),
+      2 -> Owner(Some(2), "john2", "Davis", "TA", "TA", "0000"),
+      3 -> Owner(Some(3), "john3", "Bavis", "TA", "TA", "0000"))
 
     val simpleRepo: OwnerRepository[Task] = new OwnerRepository[Task] {
 
@@ -50,18 +57,25 @@ object OwnerServiceTest extends App {
       owners <- service1.findOwnerByLastName("Davis")
     } yield owners.size == 2
 
+    
+    
+    
     val service2 = new ClinicServiceImpl[ConnectionIO]
 
     val check2 = for {
-      nowner <- service2.saveOwner(Owner(None, "john", "smith", "ta", "ta", "4444", Set.empty))
+      nowner <- service2.saveOwner(Owner(None, "john", "smith", "ta", "ta", "4444"))
     } yield nowner.id
 
+    val check3 = for {
+      owners <- service2.findOwnerByLastName("Davis")
+    } yield owners.size == 2
+
+    
     val cp = JdbcConnectionPool.create("jdbc:h2:~/test", "sa", "sa")
 
     val xa = DataSourceTransactor[Task](cp)
-    val prog2 = check2.transform(new (ConnectionIO ~> Task) {
-      def apply[A](o: ConnectionIO[A]) = o.transact(xa)
-    })
+    val prog2 = check2.transform(natTransform(xa))
+    val prog3 = check3.transform(natTransform(xa))
 
     val h2Repo: OwnerRepository[ConnectionIO] = new OwnerRepositoryDoobieH2(xa)
 
@@ -76,8 +90,9 @@ object OwnerServiceTest extends App {
 
     val theProg = for {
       lb <- runReader(simpleRepo)(check1).replicateM(10)
+      lb2 <- runReader(h2Repo)(prog3).replicateM(10)
       lids <- runReader(h2Repo)(prog2).replicateM(10)
-    } yield lb ++ lids
+    } yield lb ++ lb2 ++ lids
 
     val results = attemptTask(theProg)(20 seconds).runDisjunction.runNel.run
     println(results)
