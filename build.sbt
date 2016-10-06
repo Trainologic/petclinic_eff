@@ -7,6 +7,13 @@ scalaVersion := "2.11.8"
 scalaOrganization := "org.typelevel"
 scalacOptions += "-Ypartial-unification"
 
+lazy val http4sVersion = "0.14.8"
+
+libraryDependencies ++= Seq(
+  "org.http4s" %% "http4s-dsl" % http4sVersion,
+  "org.http4s" %% "http4s-blaze-server" % http4sVersion,
+  "org.http4s" %% "http4s-blaze-client" % http4sVersion
+)
 
 libraryDependencies += "org.atnos" % "eff-scalaz_2.11" % "2.0.0-RC7"
 libraryDependencies += "org.atnos" % "eff-scalaz-concurrent_2.11" % "2.0.0-RC7"

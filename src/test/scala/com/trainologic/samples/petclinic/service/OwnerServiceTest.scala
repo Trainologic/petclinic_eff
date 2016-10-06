@@ -19,16 +19,13 @@ import scalaz.NaturalTransformation
 object OwnerServiceTest extends App {
 
   def natTransform(tran: Transactor[Task]) = new (ConnectionIO ~> Task) {
-      def apply[A](o: ConnectionIO[A]) = o.transact(tran)
-    }
-  
-  
-  
+    def apply[A](o: ConnectionIO[A]) = o.transact(tran)
+  }
+
   def prepareDB(cp: JdbcConnectionPool): Task[Int] = {
 
     val xa = DataSourceTransactor[Task](cp)
 
-   
     import repository.InitH2._
     import repository.PopulateH2._
     (dropAll.run *> createTables.run *> populateDB.run).transact(xa)
@@ -57,9 +54,6 @@ object OwnerServiceTest extends App {
       owners <- service1.findOwnerByLastName("Davis")
     } yield owners.size == 2
 
-    
-    
-    
     val service2 = new ClinicServiceImpl[ConnectionIO]
 
     val check2 = for {
@@ -70,7 +64,6 @@ object OwnerServiceTest extends App {
       owners <- service2.findOwnerByLastName("Davis")
     } yield owners.size == 2
 
-    
     val cp = JdbcConnectionPool.create("jdbc:h2:~/test", "sa", "sa")
 
     val xa = DataSourceTransactor[Task](cp)
