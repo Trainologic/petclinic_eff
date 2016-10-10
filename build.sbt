@@ -7,10 +7,11 @@ scalaVersion := "2.11.8"
 scalaOrganization := "org.typelevel"
 scalacOptions += "-Ypartial-unification"
 
-lazy val http4sVersion = "0.14.8"
+lazy val http4sVersion = "0.14.9a"
 
 libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-dsl" % http4sVersion,
+  "org.http4s" %% "http4s-argonaut" % http4sVersion,
   "org.http4s" %% "http4s-blaze-server" % http4sVersion,
   "org.http4s" %% "http4s-blaze-client" % http4sVersion
 )
@@ -18,6 +19,7 @@ libraryDependencies ++= Seq(
 libraryDependencies += "org.atnos" % "eff-scalaz_2.11" % "2.0.0-RC7"
 libraryDependencies += "org.atnos" % "eff-scalaz-concurrent_2.11" % "2.0.0-RC7"
 libraryDependencies += "org.tpolecat" % "doobie-h2_2.11" % "0.3.1-M1"
+libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.7.21"
 
 EclipseKeys.withSource := true
 
