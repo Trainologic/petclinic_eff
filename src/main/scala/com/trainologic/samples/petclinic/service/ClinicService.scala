@@ -1,19 +1,18 @@
 package com.trainologic.samples.petclinic.service
 import com.trainologic.samples.petclinic._
 import model.Owner
+import cats.data.Reader
 import repository.OwnerRepository
-import scalaz.\/
-import scalaz.concurrent.Task
-import scalaz.Reader
+import cats.data.Xor
 import org.atnos.eff._
 import org.atnos.eff.syntax.eff._
 import org.atnos.eff.ReaderEffect._
 import org.atnos.eff.ValidateEffect._
-import scalaz.Monad
+import cats.Monad
 
 abstract class ClinicService[M[_] : Monad] {
   
-	type S = Fx.fx4[M, DataAccessException \/  ?, Validate[String, ?], Reader[OwnerRepository[M], ?]]
+	type S = Fx.fx4[M, DataAccessException Xor  ?, Validate[String, ?], Reader[OwnerRepository[M], ?]]
   
   def saveOwner(owner: Owner):  Eff[S, Owner]
   
@@ -33,10 +32,13 @@ class ClinicServiceImpl[M[_] : Monad] extends ClinicService[M] {
   
 	override def findOwnerByLastName(lastName: String) = for {
 		c <- ask[S, OwnerRepository[M]]
-		r <- c.findByLastName(lastName).into[S]
+		r <- {
+		  val kkkk  = implicitly[IntoPoly[c.S, S]]
+		  c.findByLastName(lastName).into[S](kkkk)
+		}
 	} yield r
   
-  
+   
 	def validateOwner(owner: Owner) = for {
     _ <- validateCheck(owner.lastName.nonEmpty, "last name should not be empty")
     _ <- validateCheck(owner.firstName.nonEmpty, "first name should not be empty")

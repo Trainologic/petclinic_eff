@@ -1,12 +1,11 @@
 package com.trainologic.samples.petclinic.repository
+import monix.eval.Task
 import doobie.imports._
 import org.atnos.eff._
 import Eff._
 import org.atnos.eff.syntax.eff._
-import TaskEffect._
 import com.trainologic.samples.petclinic._
 import model.Owner
-import scalaz.concurrent.Task
 import java.sql.Connection
 import org.h2.jdbcx.JdbcConnectionPool
 class OwnerRepositoryDoobieH2(val transactor: Transactor[Task]) extends OwnerRepository[ConnectionIO] {
