@@ -49,7 +49,7 @@ object OwnerServiceTest extends App {
   val cp = JdbcConnectionPool.create("jdbc:h2:~/test", "sa", "sa")
 
   val xa = DataSourceTransactor[Task](cp)
-  val h2Repo: OwnerRepository[ConnectionIO] = new OwnerRepositoryDoobieH2(xa)
+  val h2Repo: OwnerRepository[ConnectionIO] = new OwnerRepositoryDoobieH2
   val service2: ClinicService[ConnectionIO] = new ClinicServiceImpl[ConnectionIO]
 
   def helper(es: Eff[controller.S2, Response]): scalaz.concurrent.Task[Response] = {
