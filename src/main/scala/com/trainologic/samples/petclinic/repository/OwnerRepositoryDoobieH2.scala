@@ -8,15 +8,26 @@ import com.trainologic.samples.petclinic._
 import model.Owner
 import java.sql.Connection
 import org.h2.jdbcx.JdbcConnectionPool
-class OwnerRepositoryDoobieH2(val transactor: Transactor[Task]) extends OwnerRepository[ConnectionIO] {
-  override def findById(id: Int): Eff[S, Owner] = {
-    ???
-  }
+class OwnerRepositoryDoobieH2 extends OwnerRepository[ConnectionIO] {
+  override def findById(id: Int): Eff[S, Owner] = for {
+    oOwner <- send(selectById(id)).into[S]
+    owner <- XorEffect.optionXor(oOwner, s"owner id not found $id").into[S]
+  } yield owner
+    
+
 
   override def findByLastName(lastName: String): Eff[S, Seq[Owner]] = for {
     owners <- send(selectOwnersByLastName(lastName)).into[S]
   } yield owners
 
+  
+  def selectById(id: Int) = sql"""
+      SELECT 
+        id, first_name, last_name, address, city, telephone
+      FROM owners 
+      WHERE id = $id
+    """.query[Owner].option
+  
   def selectOwnersByLastName(lastName: String) = sql"""
       SELECT 
         id, first_name, last_name, address, city, telephone
