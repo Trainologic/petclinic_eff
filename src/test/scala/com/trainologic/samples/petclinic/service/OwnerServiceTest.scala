@@ -1,6 +1,5 @@
 package com.trainologic.samples.petclinic.service
 import com.trainologic.samples.petclinic._
-import repository.MapBasedReadOnlyOwnerRepository
 import monix.execution.Scheduler.Implicits.global
 import cats.~>
 import cats.Id
@@ -54,20 +53,15 @@ object OwnerServiceTest extends App {
 
   def helper(es: Eff[controller.S2, Response]): scalaz.concurrent.Task[Response] = {
 
-    val gggg = runReader(service2)(es)
-    val hhhh = runReader(h2Repo)(gggg)
+    val hhhh = runReader(h2Repo)(runReader(service2)(es))
+  
 
     type TS = Fx2[Task, DataAccessException Xor ?]
     /// merge validate with either
     import cats.instances.string._
     val handledValidation = runMap(hhhh)((_: String) + " ")
 
-    /*val z = new Interpret.Translate[Validate[String, ?], TS] {
-      override def apply[X](vv: Validate[String, X]): Eff[TS, X] = {
-         
-        ???
-      }
-    }*/
+   
     val jj = for {
       rv <- handledValidation
       f <- fromXor(rv).into[TS]
@@ -75,27 +69,23 @@ object OwnerServiceTest extends App {
 
     val w = new Interpret.Translate[DataAccessException Xor ?, Fx1[Task]] {
       override def apply[X](vv: DataAccessException Xor X): Eff[Fx1[Task], X] =
-        for {
-          // TODO: replace with Task.raiseError
-          x <- monix.TaskEffect.async { vv.fold(x => throw new RuntimeException(x), identity) }
-        } yield x
-
+        send(vv.fold[Task[X]](err => Task.raiseError(new RuntimeException(err)),
+            Task.pure))
     }
 
-    val bbbaaa = jj.translate(w)(Member.Member2R[Task, String Xor ?])
-    
-    bbbaaa.detach
-    
+    jj.translate(w)(Member.Member2R[Task, String Xor ?]).detach
   }
 
   import org.http4s._, org.http4s.dsl._
-
+/*
   val dummyReq = Request(uri = Uri(path = "/owners", query = Query("lastName" -> Some("john"))))
-//  val muuu = controller.processFindForm(natTransform(xa))
-//  val blbl = muuu(dummyReq)
- // helper(blbl)
+  val muuu = controller.processFindForm(natTransform(xa))
+  val blbl = muuu(dummyReq)
+  helper(blbl)
 
  // System.exit(0)
+  * 
+  */
   val test4 = HttpService(controller.processFindForm(natTransform(xa)) andThen helper)
 
   BlazeBuilder.mountService(test4, "/owners").run
@@ -103,17 +93,7 @@ object OwnerServiceTest extends App {
   Thread.sleep(32432442)
 
   def test1 = {
-    val owners: Map[Int, Owner] = Map(
-      1 -> Owner(Some(1), "john", "Davis", "TA", "TA", "0000"),
-      2 -> Owner(Some(2), "john2", "Davis", "TA", "TA", "0000"),
-      3 -> Owner(Some(3), "john3", "Bavis", "TA", "TA", "0000"))
-
-    
-
-    val service1 = new ClinicServiceImpl[Id]
-    val check1 = for {
-      owners <- service1.findOwnerByLastName("Davis")
-    } yield owners.size == 2
+   
 
     val check2 = for {
       nowner <- service2.saveOwner(Owner(None, "john", "smith", "ta", "ta", "4444"))
@@ -127,22 +107,14 @@ object OwnerServiceTest extends App {
     val prog3 = check3.transform(natTransform(xa))
 
     
-    val simpleRepo = MapBasedReadOnlyOwnerRepository(owners)
-    
-    val baa = runReader(simpleRepo)(check1)    
-    
-    
-    val result = runReader(simpleRepo)(check1).runXor.runNel.runPure
-    println(result)
-
     prepareDB(cp).coeval
     import scala.concurrent.duration._
     val result2 = awaitTask(runReader(h2Repo)(prog2))(20 seconds).runXor.runNel.run
 
     println(result2)
-
+/*
     val theApplicative: Applicative[Eff[Fx3[Task, String Xor ?, Validate[String, ?]], ?]] = implicitly
-    /* for now it crashes compiler after moving to cats
+     for now it crashes compiler after moving to cats
     val theProg = for {
       lb <- theApplicative.replicateA(10, runReader(simpleRepo)(check1))
       lb2 <- theApplicative.replicateA(10, runReader(h2Repo)(prog3))
