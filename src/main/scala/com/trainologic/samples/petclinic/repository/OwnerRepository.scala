@@ -7,10 +7,10 @@ import org.atnos.eff.Eff
 import org.atnos.eff.Validate
 import cats.data.Xor
 import cats.Monad
-
-abstract class OwnerRepository[M[_] : Monad] {
+import Stacks._
+abstract class OwnerRepository[M[_]] {
    
-  type S = Fx.fx3[M, DataAccessException Xor ?, Validate[String, ?]]
+  type S = Fx.prepend[M, BasicStack]
   
   def findByLastName(lastName: String):  Eff[S, Seq[Owner]]
   def findById(id: Int) : Eff[S, Owner]

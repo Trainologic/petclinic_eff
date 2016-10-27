@@ -10,7 +10,7 @@ import org.atnos.eff.ReaderEffect._
 import org.atnos.eff.ValidateEffect._
 import cats.Monad
 
-abstract class ClinicService[M[_] : Monad] {
+abstract class ClinicService[M[_]] {
   
 	type S = Fx.fx4[M, DataAccessException Xor  ?, Validate[String, ?], Reader[OwnerRepository[M], ?]]
   
@@ -22,7 +22,7 @@ abstract class ClinicService[M[_] : Monad] {
   
 }
 
-class ClinicServiceImpl[M[_] : Monad] extends ClinicService[M] {
+class ClinicServiceImpl[M[_]] extends ClinicService[M] {
   
   
   override def findOwnerById(id: Int) = for {
@@ -32,10 +32,7 @@ class ClinicServiceImpl[M[_] : Monad] extends ClinicService[M] {
   
 	override def findOwnerByLastName(lastName: String) = for {
 		c <- ask[S, OwnerRepository[M]]
-		r <- {
-		  val kkkk  = implicitly[IntoPoly[c.S, S]]
-		  c.findByLastName(lastName).into[S](kkkk)
-		}
+		r <- c.findByLastName(lastName).into[S]
 	} yield r
   
    
@@ -46,9 +43,9 @@ class ClinicServiceImpl[M[_] : Monad] extends ClinicService[M] {
 	
 	
   override def saveOwner(owner: Owner):  Eff[S, Owner] = for {
-    c <- ask[S, OwnerRepository[M]]
+    ownerRepository <- ask[S, OwnerRepository[M]]
     _ <- validateOwner(owner).into[S]
-    newOwner <- c.save(owner).into[S]
+    newOwner <- ownerRepository.save(owner).into[S]
   } yield newOwner 
   
 }

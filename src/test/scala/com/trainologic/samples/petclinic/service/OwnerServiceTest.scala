@@ -1,7 +1,9 @@
 package com.trainologic.samples.petclinic.service
 import com.trainologic.samples.petclinic._
+import repository.MapBasedReadOnlyOwnerRepository
 import monix.execution.Scheduler.Implicits.global
 import cats.~>
+import cats.Id
 import cats.data.Xor
 import cats.data.Reader
 import monix.eval.Task
@@ -24,19 +26,10 @@ import cats.implicits._
 import fs2.util.Catchable
 import fs2.util.Suspendable
 import fs2.util.Attempt
-import scala.util.Try
-import scala.util.{Success, Right, Left}
+import Utils._
 object OwnerServiceTest extends App {
-implicit class TryPimp[T](t:Try[T]){
-    def toEither:Either[Throwable,T] = t.transform(s => Success(Right(s)), f => Success(Left(f))).get
-  }  
-  implicit val taskCatchable  = new Suspendable[Task] with Catchable[Task]{
-    override def pure[A](a: A): Task[A] = Task.pure(a)
-    override def flatMap[A, B](a: Task[A])(f: A => Task[B]) = a.flatMap(f)
-    override def suspend[A](fa: => Task[A]): Task[A] = Task.suspend(fa)
-    override def fail[A](err: Throwable): Task[A] = Task.raiseError(err)
-    override def attempt[A](fa: Task[A]): Task[Attempt[A]] = fa.materialize.map(_.toEither)
-  }
+
+  
 
   def natTransform(tran: Transactor[Task]) = new (ConnectionIO ~> Task) {
     def apply[A](o: ConnectionIO[A]) = o.transact(tran)
@@ -80,8 +73,6 @@ implicit class TryPimp[T](t:Try[T]){
       f <- fromXor(rv).into[TS]
     } yield f
 
-    ///  val qqqq = hhhh.translate[Validate[String, ?], TS](z)(Member.Member3R[Task, String \/ ?, Validate[String, ?]])
-
     val w = new Interpret.Translate[DataAccessException Xor ?, Fx1[Task]] {
       override def apply[X](vv: DataAccessException Xor X): Eff[Fx1[Task], X] =
         for {
@@ -92,21 +83,9 @@ implicit class TryPimp[T](t:Try[T]){
     }
 
     val bbbaaa = jj.translate(w)(Member.Member2R[Task, String Xor ?])
-    val monixResult = bbbaaa.detach
     
-    import scalaz.{\/, -\/, \/-}
-    import scala.util.{Success, Failure}
-    scalaz.concurrent.Task.async[Response](
-      register => monixResult.runAsync {tr => tr match {
-        case Success(r) => register(\/-(r))
-        case Failure(t) => register(-\/(t))
-      } }
-    )
+    bbbaaa.detach
     
-    /*scalaz.concurrent.Task.apply(monixResult.coeval.value match {
-      case Right(r) => r
-      case Left(f) => error("fff")
-    })//async(k => monixResult.runAsync { x => ??? })*/
   }
 
   import org.http4s._, org.http4s.dsl._
@@ -129,19 +108,9 @@ implicit class TryPimp[T](t:Try[T]){
       2 -> Owner(Some(2), "john2", "Davis", "TA", "TA", "0000"),
       3 -> Owner(Some(3), "john3", "Bavis", "TA", "TA", "0000"))
 
-    val simpleRepo: OwnerRepository[Task] = new OwnerRepository[Task] {
+    
 
-      def fromLastName(lastName: String) =
-        owners.values.filter(_.lastName == lastName).toSeq
-
-      override def findByLastName(lastName: String): Eff[S, Seq[Owner]] =
-        monix.TaskEffect.sync(fromLastName(lastName))
-
-      override def findById(id: Int): Eff[S, Owner] = ???
-      override def save(owner: Owner): Eff[S, Owner] = ???
-    }
-
-    val service1 = new ClinicServiceImpl[Task]
+    val service1 = new ClinicServiceImpl[Id]
     val check1 = for {
       owners <- service1.findOwnerByLastName("Davis")
     } yield owners.size == 2
@@ -157,11 +126,17 @@ implicit class TryPimp[T](t:Try[T]){
     val prog2 = check2.transform(natTransform(xa))
     val prog3 = check3.transform(natTransform(xa))
 
-    import scala.concurrent.duration._
-    val result = awaitTask(runReader(simpleRepo)(check1))(20 seconds).runXor.runNel.run
+    
+    val simpleRepo = MapBasedReadOnlyOwnerRepository(owners)
+    
+    val baa = runReader(simpleRepo)(check1)    
+    
+    
+    val result = runReader(simpleRepo)(check1).runXor.runNel.runPure
     println(result)
 
     prepareDB(cp).coeval
+    import scala.concurrent.duration._
     val result2 = awaitTask(runReader(h2Repo)(prog2))(20 seconds).runXor.runNel.run
 
     println(result2)

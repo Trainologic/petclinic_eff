@@ -15,6 +15,7 @@ import repository.OwnerRepository
 import model.Owner
 import cats.data.Xor
 import cats.data.Reader
+import model.ArgonautCodecs._
 class OwnerController[M[_]] {
 	
   object LastNameQueryParamMatcher extends QueryParamDecoderMatcher[String]("lastName")
@@ -22,10 +23,6 @@ class OwnerController[M[_]] {
   type S1 = FxAppend[Fx1[M], BaseStack]
   type S2 = FxAppend[Fx1[Task], BaseStack]
 
-  implicit val ownerCodecJson: EncodeJson[Owner] =
-    Argonaut.casecodec6(Owner.apply, Owner.unapply)("id", "firstName", "lastName", "address", "city", "telephone")
-
-    
   implicit def ownersEncoder: EntityEncoder[Seq[Owner]] = jsonEncoderOf[Seq[Owner]]
 
    
