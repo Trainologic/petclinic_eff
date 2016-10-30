@@ -14,7 +14,7 @@ object ArgonautCodecs {
   implicit val ownerCodecJson: CodecJson[Owner] =
     Argonaut.casecodec6(Owner.apply, Owner.unapply)("id", "firstName", "lastName", "address", "city", "telephone")
 
-  implicit val petCodecJson: CodecJson[Pet] =
+  implicit def petCodecJson: CodecJson[Pet] =
     Argonaut.casecodec5(Pet.apply, Pet.unapply)("id", "name", "birthDate", "petType", "owner")
 
 }
