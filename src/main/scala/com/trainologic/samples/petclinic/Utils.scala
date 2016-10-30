@@ -21,6 +21,12 @@ object Utils {
     override def attempt[A](fa: MonixTask[A]): MonixTask[Attempt[A]] = fa.materialize.map(_.toEither)
   }
   
+  
+  
+  
+  
+  
+  
 
   implicit def monixTask2scalazTask[A](mtask: MonixTask[A])(implicit s: Scheduler): ScalazTask[A] = {
     import scalaz.{ \/, -\/, \/- }

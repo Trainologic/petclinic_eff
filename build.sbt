@@ -20,6 +20,8 @@ libraryDependencies += "org.atnos" % "eff-cats_2.11" % "2.0.0-RC17"
 libraryDependencies += "org.atnos" % "eff-cats-monix_2.11" % "2.0.0-RC17"
 libraryDependencies += "org.tpolecat" % "doobie-h2-cats_2.11" % "0.3.1-M1"
 libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.7.21"
+libraryDependencies += "com.lihaoyi" % "ammonite" % "0.7.8" % "test" cross CrossVersion.full
+
 
 EclipseKeys.withSource := true
 

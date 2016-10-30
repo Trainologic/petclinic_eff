@@ -33,7 +33,6 @@ object OwnerServicePure extends App {
 
     val simpleRepo = MapBasedReadOnlyOwnerRepository(owners)
     
-    
     val result = runReader(simpleRepo)(check1).runXor.runNel.runPure
     println(result)
 
